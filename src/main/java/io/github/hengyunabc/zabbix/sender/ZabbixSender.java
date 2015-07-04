@@ -1,5 +1,7 @@
 package io.github.hengyunabc.zabbix.sender;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -7,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -17,6 +20,10 @@ public class ZabbixSender {
 	int connectTimeout = 3 * 1000;
 	int socketTimeout = 3 * 1000;
 
+	public ZabbixSender(String host) {
+		this(host, 10051);
+	}	
+	
 	public ZabbixSender(String host, int port) {
 		this.host = host;
 		this.port = port;
@@ -29,6 +36,24 @@ public class ZabbixSender {
 		this.socketTimeout = socketTimeout;
 	}
 
+	public ZabbixSender(File configFile) throws IOException{
+		FileInputStream stream = new FileInputStream(configFile);
+		Properties settings;
+		settings = new Properties();
+		settings.load(stream);
+		String srv = settings.getProperty("ServerActive");
+		// Not tested for IPv6
+		int i = srv.lastIndexOf(":");
+		if (i > -1){
+			this.port = Integer.valueOf(srv.substring(i + 1));			
+		}
+		else {
+			i = srv.length();
+			this.port = 10051;
+		}
+		this.host = srv.substring(0, i);
+	}
+	
 	public SenderResult send(DataObject dataObject) throws IOException {
 		return send(dataObject, System.currentTimeMillis());
 	}
